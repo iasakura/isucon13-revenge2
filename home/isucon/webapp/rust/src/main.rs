@@ -293,10 +293,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/user/:username/statistics",
             axum::routing::get(get_user_statistics_handler),
         )
-        .route(
-            "/api/user/:username/icon",
-            axum::routing::get(get_icon_handler),
-        )
+        // .route(
+        //     "/api/user/:username/icon",
+        //     axum::routing::get(get_icon_handler),
+        // )
         .route("/api/icon", axum::routing::post(post_icon_handler))
         // stats
         // ライブ配信統計情報
@@ -1595,33 +1595,33 @@ struct PostIconResponse {
     id: i64,
 }
 
-#[tracing::instrument]
-async fn get_icon_handler(
-    State(AppState { pool, .. }): State<AppState>,
-    Path((username,)): Path<(String,)>,
-) -> Result<axum::response::Response, Error> {
-    use axum::response::IntoResponse as _;
+// #[tracing::instrument]
+// async fn get_icon_handler(
+//     State(AppState { pool, .. }): State<AppState>,
+//     Path((username,)): Path<(String,)>,
+// ) -> Result<axum::response::Response, Error> {
+//     use axum::response::IntoResponse as _;
 
-    let mut tx = pool.begin().await?;
+//     let mut tx = pool.begin().await?;
 
-    let user: UserModel = sqlx::query_as("SELECT * FROM users WHERE name = ?")
-        .bind(username)
-        .fetch_one(&mut *tx)
-        .await?;
+//     let user: UserModel = sqlx::query_as("SELECT * FROM users WHERE name = ?")
+//         .bind(username)
+//         .fetch_one(&mut *tx)
+//         .await?;
 
-    let image = get_user_icon(&user.id).await;
+//     let image = get_user_icon(&user.id).await;
 
-    let headers = [(axum::http::header::CONTENT_TYPE, "image/jpeg")];
-    if let Ok(image) = image {
-        Ok((headers, image).into_response())
-    } else {
-        let file = tokio::fs::File::open(FALLBACK_IMAGE).await.unwrap();
-        let stream = tokio_util::io::ReaderStream::new(file);
-        let body = axum::body::StreamBody::new(stream);
+//     let headers = [(axum::http::header::CONTENT_TYPE, "image/jpeg")];
+//     if let Ok(image) = image {
+//         Ok((headers, image).into_response())
+//     } else {
+//         let file = tokio::fs::File::open(FALLBACK_IMAGE).await.unwrap();
+//         let stream = tokio_util::io::ReaderStream::new(file);
+//         let body = axum::body::StreamBody::new(stream);
 
-        Ok((headers, body).into_response())
-    }
-}
+//         Ok((headers, body).into_response())
+//     }
+// }
 
 #[tracing::instrument]
 async fn post_icon_handler(
