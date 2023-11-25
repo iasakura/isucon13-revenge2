@@ -19,6 +19,7 @@
 !home/isucon/.ssh/authorized_keys
 !home/isucon/.bashrc
 !home/isucon/Makefile
+!home/isucon/env.sh
 !home/isucon/webapp
 !home/isucon/webapp/pdns
 !home/isucon/webapp/pdns/**
