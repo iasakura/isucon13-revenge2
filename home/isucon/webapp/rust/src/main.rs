@@ -612,7 +612,8 @@ async fn search_livestreams_handler(
         for ls in sqlx::query_as(
             r#"SELECT livestreams.* FROM livestreams
             INNER JOIN livestream_tags ON livestreams.id = livestream_tags.livestream_id
-            INNER JOIN tags ON livestream_tags.tag_id = tags.id AND tags.name = ?"#,
+            INNER JOIN tags ON livestream_tags.tag_id = tags.id AND tags.name = ?
+            ORDER BY livestreams.id"#,
         )
         .bind(key_tag_name)
         .fetch_all(&mut *tx)
