@@ -11,4 +11,4 @@ log:
 	journalctl -u isupipe-rust -f -n100
 
 sqinit:
-    sudo cp /dev/null  /var/log/mysql/mysql-slow.log
+	sudo cp /dev/null  /var/log/mysql/mysql-slow.log
