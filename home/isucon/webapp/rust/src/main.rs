@@ -1792,8 +1792,8 @@ async fn verify_user_session(jar: &SignedCookieJar) -> Result<(), Error> {
     Ok(())
 }
 
-async fn get_user_icon(id: &i64) -> Result<Vec<u8>, Error> {
-    let mut f = File::open(format!("/data/{}.jpeg", id)).await?;
+async fn get_user_icon(name: &str) -> Result<Vec<u8>, Error> {
+    let mut f = File::open(format!("/data/{}.jpeg", name)).await?;
     let mut buffer = Vec::new();
 
     // read the whole file
@@ -1814,7 +1814,7 @@ async fn fill_user_response(tx: &mut MySqlConnection, user_model: UserModel) -> 
         .fetch_one(&mut *tx)
         .await?;
 
-    let image = get_user_icon(&user_model.id).await;
+    let image = get_user_icon(&user_model.name).await;
     let image = if let Ok(image) = image {
         image
     } else {
