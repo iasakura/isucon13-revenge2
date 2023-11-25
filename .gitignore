@@ -11,6 +11,8 @@
 !etc/nginx/nginx.conf
 !etc/nginx/sites-enabled/
 !etc/nginx/sites-enabled/**
+!etc/powerdns
+!etc/powerdns/**
 !home
 !home/isucon
 !home/isucon/.ssh
