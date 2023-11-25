@@ -851,21 +851,19 @@ async fn fill_livestream_response(
         .await?;
     let owner = fill_user_response(tx, owner_model).await?;
 
-    let livestream_tag_models: Vec<LivestreamTagModel> =
-        sqlx::query_as("SELECT * FROM livestream_tags WHERE livestream_id = ?")
+    let span =tracing::info_span!("SELECT tags.id, tags.name FROM livestream_tags WHERE livestream_id = ? INNER JOIN tags on tags.id = livestream_tags.id");
+    let livestream_tag_id_and_names: Vec<(i64, String)> =
+        sqlx::query_as("SELECT tags.id, tags.name FROM livestream_tags WHERE livestream_id = ? INNER JOIN tags on tags.id = livestream_tags.id")
             .bind(livestream_model.id)
             .fetch_all(&mut *tx)
+            .instrument(span)
             .await?;
 
-    let mut tags = Vec::with_capacity(livestream_tag_models.len());
-    for livestream_tag_model in livestream_tag_models {
-        let tag_model: TagModel = sqlx::query_as("SELECT * FROM tags WHERE id = ?")
-            .bind(livestream_tag_model.tag_id)
-            .fetch_one(&mut *tx)
-            .await?;
+    let mut tags = Vec::with_capacity(livestream_tag_id_and_names.len());
+    for tag in livestream_tag_id_and_names {
         tags.push(Tag {
-            id: tag_model.id,
-            name: tag_model.name,
+            id: tag.0,
+            name: tag.1,
         });
     }
 
@@ -1029,10 +1027,12 @@ async fn post_livecomment_handler(
 
     let mut tx = pool.begin().await?;
 
+    let span = tracing::info_span!("SELECT * FROM livestreams WHERE id = ?");
     let livestream_model: LivestreamModel =
         sqlx::query_as("SELECT * FROM livestreams WHERE id = ?")
             .bind(livestream_id)
             .fetch_optional(&mut *tx)
+            .instrument(span)
             .await?
             .ok_or(Error::NotFound("livestream not found".into()))?;
 
@@ -1268,9 +1268,11 @@ async fn fill_livecomment_response(
     tx: &mut MySqlConnection,
     livecomment_model: LivecommentModel,
 ) -> sqlx::Result<Livecomment> {
+    let span = tracing::info_span!("SELECT * FROM users WHERE id = ?");
     let comment_owner_model: UserModel = sqlx::query_as("SELECT * FROM users WHERE id = ?")
         .bind(livecomment_model.user_id)
         .fetch_one(&mut *tx)
+        .instrument(span)
         .await?;
     let comment_owner = fill_user_response(&mut *tx, comment_owner_model).await?;
 

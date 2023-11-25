@@ -26,3 +26,6 @@ ALTER TABLE `users` auto_increment = 1;
 
 ALTER TABLE ng_words DROP INDEX ng_words_live_user; 
 ALTER TABLE ng_words ADD INDEX ng_words_live_user(livestream_id, user_id);
+
+ALTER TABLE livestream_tags DROP INDEX livestrmtag_live;
+ALTER TABLE livestream_tags ADD INDEX livestrmtag_live(livestream_id);
