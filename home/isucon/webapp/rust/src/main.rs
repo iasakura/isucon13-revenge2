@@ -162,7 +162,7 @@ fn init_tracing() {
     use tracing_subscriber::util::SubscriberInitExt;
 
     tracing_subscriber::Registry::default()
-        .with(tracing_subscriber::fmt::Layer::new().with_ansi(true))
+        .with(tracing_subscriber::fmt::Layer::new().with_ansi(true).json())
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "debug".into()),
