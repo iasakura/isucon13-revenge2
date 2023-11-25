@@ -84,6 +84,7 @@ struct InitializeResponse {
     language: &'static str,
 }
 
+#[tracing::instrument]
 fn build_mysql_options() -> sqlx::mysql::MySqlConnectOptions {
     let mut options = sqlx::mysql::MySqlConnectOptions::new()
         .host("127.0.0.1")
@@ -577,6 +578,7 @@ struct SearchLivestreamsQuery {
     limit: String,
 }
 
+#[tracing::instrument]
 async fn search_livestreams_handler(
     State(AppState { pool, .. }): State<AppState>,
     Query(SearchLivestreamsQuery {
@@ -636,6 +638,7 @@ async fn search_livestreams_handler(
     Ok(axum::Json(livestreams))
 }
 
+#[tracing::instrument]
 async fn get_my_livestreams_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -667,6 +670,7 @@ async fn get_my_livestreams_handler(
     Ok(axum::Json(livestreams))
 }
 
+#[tracing::instrument]
 async fn get_user_livestreams_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -698,6 +702,7 @@ async fn get_user_livestreams_handler(
     Ok(axum::Json(livestreams))
 }
 
+#[tracing::instrument]
 // viewerテーブルの廃止
 async fn enter_livestream_handler(
     State(AppState { pool, .. }): State<AppState>,
@@ -730,6 +735,7 @@ async fn enter_livestream_handler(
     Ok(())
 }
 
+#[tracing::instrument]
 async fn exit_livestream_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -757,6 +763,7 @@ async fn exit_livestream_handler(
     Ok(())
 }
 
+#[tracing::instrument]
 async fn get_livestream_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -782,6 +789,7 @@ async fn get_livestream_handler(
     Ok(axum::Json(livestream))
 }
 
+#[tracing::instrument]
 async fn get_livecomment_reports_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -827,6 +835,7 @@ async fn get_livecomment_reports_handler(
     Ok(axum::Json(reports))
 }
 
+#[tracing::instrument]
 async fn fill_livestream_response(
     tx: &mut MySqlConnection,
     livestream_model: LivestreamModel,
@@ -933,6 +942,7 @@ struct GetLivecommentsQuery {
     limit: String,
 }
 
+#[tracing::instrument]
 async fn get_livecomments_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -966,6 +976,7 @@ async fn get_livecomments_handler(
     Ok(axum::Json(livecomments))
 }
 
+#[tracing::instrument]
 async fn get_ngwords(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -995,6 +1006,7 @@ async fn get_ngwords(
     Ok(axum::Json(ng_words))
 }
 
+#[tracing::instrument]
 async fn post_livecomment_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1080,6 +1092,7 @@ async fn post_livecomment_handler(
     Ok((StatusCode::CREATED, axum::Json(livecomment)))
 }
 
+#[tracing::instrument]
 async fn report_livecomment_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1143,6 +1156,7 @@ struct ModerateResponse {
 }
 
 // NGワードを登録
+#[tracing::instrument]
 async fn moderate_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1228,6 +1242,7 @@ async fn moderate_handler(
     ))
 }
 
+#[tracing::instrument]
 async fn fill_livecomment_response(
     tx: &mut MySqlConnection,
     livecomment_model: LivecommentModel,
@@ -1255,6 +1270,7 @@ async fn fill_livecomment_response(
     })
 }
 
+#[tracing::instrument]
 async fn fill_livecomment_report_response(
     tx: &mut MySqlConnection,
     report_model: LivecommentReportModel,
@@ -1309,6 +1325,7 @@ struct GetReactionsQuery {
     limit: String,
 }
 
+#[tracing::instrument]
 async fn get_reactions_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1342,6 +1359,7 @@ async fn get_reactions_handler(
     Ok(axum::Json(reactions))
 }
 
+#[tracing::instrument]
 async fn post_reaction_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1387,6 +1405,7 @@ async fn post_reaction_handler(
     Ok((StatusCode::CREATED, axum::Json(reaction)))
 }
 
+#[tracing::instrument]
 async fn fill_reaction_response(
     tx: &mut MySqlConnection,
     reaction_model: ReactionModel,
@@ -1493,6 +1512,7 @@ struct PostIconResponse {
     id: i64,
 }
 
+#[tracing::instrument]
 async fn get_icon_handler(
     State(AppState { pool, .. }): State<AppState>,
     Path((username,)): Path<(String,)>,
@@ -1523,6 +1543,7 @@ async fn get_icon_handler(
     }
 }
 
+#[tracing::instrument]
 async fn post_icon_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1559,6 +1580,7 @@ async fn post_icon_handler(
     ))
 }
 
+#[tracing::instrument]
 async fn get_me_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1591,6 +1613,7 @@ async fn get_me_handler(
 
 // ユーザ登録API
 // POST /api/register
+#[tracing::instrument]
 async fn register_handler(
     State(AppState {
         pool,
@@ -1668,6 +1691,7 @@ struct Session {
 
 // ユーザログインAPI
 // POST /api/login
+#[tracing::instrument]
 async fn login_handler(
     State(AppState { pool, .. }): State<AppState>,
     mut jar: SignedCookieJar,
@@ -1713,6 +1737,7 @@ async fn login_handler(
 
 // ユーザ詳細API
 // GET /api/user/:username
+#[tracing::instrument]
 async fn get_user_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1737,6 +1762,7 @@ async fn get_user_handler(
     Ok(axum::Json(user))
 }
 
+#[tracing::instrument]
 async fn verify_user_session(jar: &SignedCookieJar) -> Result<(), Error> {
     let cookie = jar
         .get(DEFAULT_SESSION_ID_KEY)
@@ -1755,6 +1781,7 @@ async fn verify_user_session(jar: &SignedCookieJar) -> Result<(), Error> {
     Ok(())
 }
 
+#[tracing::instrument]
 async fn fill_user_response(tx: &mut MySqlConnection, user_model: UserModel) -> sqlx::Result<User> {
     let theme_model: ThemeModel = sqlx::query_as("SELECT * FROM themes WHERE user_id = ?")
         .bind(user_model.id)
@@ -1858,6 +1885,7 @@ impl From<MysqlDecimal> for i64 {
     }
 }
 
+#[tracing::instrument]
 async fn get_user_statistics_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -1996,6 +2024,7 @@ async fn get_user_statistics_handler(
     }))
 }
 
+#[tracing::instrument]
 async fn get_livestream_statistics_handler(
     State(AppState { pool, .. }): State<AppState>,
     jar: SignedCookieJar,
@@ -2086,6 +2115,7 @@ struct PaymentResult {
     total_tip: i64,
 }
 
+#[tracing::instrument]
 async fn get_payment_result(
     State(AppState { pool, .. }): State<AppState>,
 ) -> Result<axum::Json<PaymentResult>, Error> {
