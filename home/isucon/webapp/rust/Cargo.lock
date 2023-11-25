@@ -1133,6 +1133,7 @@ dependencies = [
  "chrono",
  "hyper",
  "listenfd",
+ "log",
  "num-traits",
  "opentelemetry",
  "opentelemetry-otlp",

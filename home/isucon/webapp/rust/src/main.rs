@@ -4,8 +4,10 @@ use axum::http::StatusCode;
 use axum_extra::extract::cookie::SignedCookieJar;
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use sqlx::mysql::{MySqlConnection, MySqlPool};
+use sqlx::ConnectOptions;
 use std::borrow::Cow;
 use std::sync::Arc;
+use std::time::Duration;
 use uuid::Uuid;
 
 const DEFAULT_SESSION_ID_KEY: &str = "SESSIONID";
@@ -91,7 +93,9 @@ fn build_mysql_options() -> sqlx::mysql::MySqlConnectOptions {
         .port(3306)
         .username("isucon")
         .password("isucon")
-        .database("isupipe");
+        .database("isupipe")
+        .log_slow_statements(log::LevelFilter::Info, Duration::from_millis(10));
+
     if let Ok(host) = std::env::var("ISUCON13_MYSQL_DIALCONFIG_ADDRESS") {
         options = options.host(&host);
     }

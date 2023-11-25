@@ -35,3 +35,4 @@ tracing-opentelemetry = { version = "=0.22.0", default-features = false, feature
     "tracing-log",
     "metrics",
 ] }
+log = "0.4.20"
