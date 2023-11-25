@@ -8,6 +8,9 @@ use sqlx::ConnectOptions;
 use std::borrow::Cow;
 use std::sync::Arc;
 use std::time::Duration;
+use tokio::fs::File;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
 use tracing::Instrument;
 use uuid::Uuid;
 
@@ -1549,13 +1552,10 @@ async fn get_icon_handler(
         .fetch_one(&mut *tx)
         .await?;
 
-    let image: Option<Vec<u8>> = sqlx::query_scalar("SELECT image FROM icons WHERE user_id = ?")
-        .bind(user.id)
-        .fetch_optional(&mut *tx)
-        .await?;
+    let image = get_user_icon(&user.id).await;
 
     let headers = [(axum::http::header::CONTENT_TYPE, "image/jpeg")];
-    if let Some(image) = image {
+    if let Ok(image) = image {
         Ok((headers, image).into_response())
     } else {
         let file = tokio::fs::File::open(FALLBACK_IMAGE).await.unwrap();
@@ -1588,12 +1588,15 @@ async fn post_icon_handler(
         .execute(&mut *tx)
         .await?;
 
-    let rs = sqlx::query("INSERT INTO icons (user_id, image) VALUES (?, ?)")
-        .bind(user_id)
-        .bind(req.image)
-        .execute(&mut *tx)
-        .await?;
-    let icon_id = rs.last_insert_id() as i64;
+    // let rs = sqlx::query("INSERT INTO icons (user_id, image) VALUES (?, ?)")
+    //     .bind(user_id)
+    //     .bind(req.image)
+    //     .execute(&mut *tx)
+    //     .await?;
+    put_user_icon(&user_id, &req.image[..]).await?;
+
+    // TODO: icon IDは一意である必要がある？
+    let icon_id = 1i64;
 
     tx.commit().await?;
 
@@ -1804,6 +1807,21 @@ async fn verify_user_session(jar: &SignedCookieJar) -> Result<(), Error> {
     Ok(())
 }
 
+async fn get_user_icon(id: &i64) -> Result<Vec<u8>, Error> {
+    let mut f = File::open(format!("/data/{}.jpeg", id)).await?;
+    let mut buffer = Vec::new();
+
+    // read the whole file
+    f.read_to_end(&mut buffer).await?;
+    Ok(buffer)
+}
+
+async fn put_user_icon(id: &i64, buf: &[u8]) -> Result<(), Error> {
+    let mut f = File::create(format!("/data/{}.jpeg", id)).await?;
+    f.write_all(buf).await?;
+    Ok(())
+}
+
 #[tracing::instrument]
 async fn fill_user_response(tx: &mut MySqlConnection, user_model: UserModel) -> sqlx::Result<User> {
     let theme_model: ThemeModel = sqlx::query_as("SELECT * FROM themes WHERE user_id = ?")
@@ -1811,11 +1829,8 @@ async fn fill_user_response(tx: &mut MySqlConnection, user_model: UserModel) -> 
         .fetch_one(&mut *tx)
         .await?;
 
-    let image: Option<Vec<u8>> = sqlx::query_scalar("SELECT image FROM icons WHERE user_id = ?")
-        .bind(user_model.id)
-        .fetch_optional(&mut *tx)
-        .await?;
-    let image = if let Some(image) = image {
+    let image = get_user_icon(&user_model.id).await;
+    let image = if let Ok(image) = image {
         image
     } else {
         tokio::fs::read(FALLBACK_IMAGE).await?
