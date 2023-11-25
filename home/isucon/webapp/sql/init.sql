@@ -23,3 +23,5 @@ ALTER TABLE `tags` auto_increment = 1;
 ALTER TABLE `livecomments` auto_increment = 1;
 ALTER TABLE `livestreams` auto_increment = 1;
 ALTER TABLE `users` auto_increment = 1;
+
+ALTER TABLE ng_words ADD INDEX ng_words_live_user(livestream_id, user_id);
