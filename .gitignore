@@ -2,6 +2,8 @@
 !.gitignore
 !.vscode
 !.vscode/**
+!opt
+!opt/init_zone_once.sh
 !etc
 !etc/mysql
 !etc/mysql/my.cnf
