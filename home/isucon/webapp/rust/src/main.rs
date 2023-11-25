@@ -1588,12 +1588,15 @@ async fn post_icon_handler(
         .execute(&mut *tx)
         .await?;
 
-    let rs = sqlx::query("INSERT INTO icons (user_id, image) VALUES (?, ?)")
-        .bind(user_id)
-        .bind(req.image)
-        .execute(&mut *tx)
-        .await?;
-    let icon_id = rs.last_insert_id() as i64;
+    // let rs = sqlx::query("INSERT INTO icons (user_id, image) VALUES (?, ?)")
+    //     .bind(user_id)
+    //     .bind(req.image)
+    //     .execute(&mut *tx)
+    //     .await?;
+    put_user_icon(&user_id, &req.image[..]).await?;
+
+    // TODO: icon IDは一意である必要がある？
+    let icon_id = 1i64;
 
     tx.commit().await?;
 
