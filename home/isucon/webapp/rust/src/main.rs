@@ -854,9 +854,9 @@ async fn fill_livestream_response(
         .await?;
     let owner = fill_user_response(tx, owner_model).await?;
 
-    let span = tracing::info_span!("SELECT tags.id, tags.name FROM livestream_tags INNER JOIN tags on tags.id = livestream_tags.id AND livestream_id = ?");
+    let span = tracing::info_span!("SELECT tags.id, tags.name FROM livestream_tags INNER JOIN tags on tags.id = livestream_tags.tag_id AND livestream_id = ?");
     let livestream_tag_id_and_names: Vec<(i64, String)> =
-        sqlx::query_as("SELECT tags.id, tags.name FROM livestream_tags INNER JOIN tags on tags.id = livestream_tags.id AND livestream_id = ?")
+        sqlx::query_as("SELECT tags.id, tags.name FROM livestream_tags INNER JOIN tags on livestream_id = ? AND livestream_tags.tag_id = tags.id")
             .bind(livestream_model.id)
             .fetch_all(&mut *tx)
             .instrument(span)
