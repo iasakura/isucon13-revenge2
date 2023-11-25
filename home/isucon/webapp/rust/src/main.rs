@@ -6,6 +6,7 @@ use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use sqlx::mysql::{MySqlConnection, MySqlPool};
 use sqlx::ConnectOptions;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::fs::File;
@@ -420,6 +421,29 @@ struct LivestreamModel {
     end_at: i64,
 }
 
+#[derive(Debug, sqlx::FromRow, Clone)]
+struct LivestreamModelRel {
+    id: i64,
+    // FROM USER
+    user_id: i64,
+    user_name: String,
+    display_name: Option<String>,
+    user_description: Option<String>,
+    // cocomade
+    // user.theme
+    theme_id: i64,
+    theme_dark_mode: bool,
+    // cocomade
+    title: String,
+    description: String,
+    playlist_url: String,
+    thumbnail_url: String,
+    start_at: i64,
+    end_at: i64,
+    tag_id: i64,
+    tag_name: String,
+}
+
 #[derive(Debug, serde::Serialize)]
 struct Livestream {
     id: i64,
@@ -608,20 +632,64 @@ async fn search_livestreams_handler(
         sqlx::query_as(&query).fetch_all(&mut *tx).await?
     } else {
         // // タグによる取得
-        let mut livestream_models = Vec::new();
-        for ls in sqlx::query_as(
-            r#"SELECT livestreams.* FROM livestreams
+        let livestream_models: Vec<LivestreamModelRel> = sqlx::query_as(
+            r#"iSELECT livestreams.*, tags.id AS tag_id, tags.name AS tag_name, users.name AS user_name, display_name, users.description AS user_description FROM livestreams
             INNER JOIN livestream_tags ON livestreams.id = livestream_tags.livestream_id
-            INNER JOIN tags ON livestream_tags.tag_id = tags.id AND tags.name = ?
+            INNER JOIN tags ON livestream_tags.tag_id = tags.id AND tags.name = '椅子'
+            INNER JOIN users WHERE users.id = livestreams.user_id
             ORDER BY id DESC"#,
         )
         .bind(key_tag_name)
         .fetch_all(&mut *tx)
-        .await?
-        {
-            livestream_models.push(ls);
+        .await?;
+
+        let mut map = HashMap::new();
+        for m in livestream_models {
+            let v = map.entry(m.id.clone()).or_insert(vec![]);
+            v.push(m);
         }
-        livestream_models
+        let mut res: Vec<Livestream> = vec![];
+        for (_, lv_list) in map {
+            let v = lv_list[0].clone();
+
+            let image = get_user_icon(&v.user_id).await;
+            let image = if let Ok(image) = image {
+                image
+            } else {
+                tokio::fs::read(FALLBACK_IMAGE).await?
+            };
+            use sha2::digest::Digest as _;
+            let icon_hash = sha2::Sha256::digest(image);
+
+            res.push(Livestream {
+                id: v.id,
+                owner: User {
+                    id: v.user_id,
+                    name: v.user_name,
+                    display_name: v.display_name,
+                    description: v.user_description,
+                    theme: Theme {
+                        id: v.theme_id,
+                        dark_mode: v.theme_dark_mode,
+                    },
+                    icon_hash: format!("{:x}", icon_hash),
+                },
+                title: v.title,
+                description: v.description,
+                playlist_url: v.playlist_url,
+                thumbnail_url: v.thumbnail_url,
+                tags: lv_list
+                    .iter()
+                    .map(|lv| Tag {
+                        id: lv.tag_id,
+                        name: lv.tag_name.clone(),
+                    })
+                    .collect::<Vec<_>>(),
+                start_at: v.start_at,
+                end_at: v.end_at,
+            });
+        }
+        return Ok(axum::Json(res));
     };
 
     let mut livestreams = Vec::with_capacity(livestream_models.len());
@@ -1469,7 +1537,7 @@ struct User {
     icon_hash: String,
 }
 
-#[derive(Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, serde::Deserialize, serde::Serialize, Clone)]
 struct Theme {
     id: i64,
     dark_mode: bool,
@@ -1570,12 +1638,12 @@ async fn post_icon_handler(
         .ok_or(Error::SessionError)?;
     let user_id: i64 = sess.get(DEFAULT_USER_ID_KEY).ok_or(Error::SessionError)?;
 
-    let mut tx = pool.begin().await?;
+    // let mut tx = pool.begin().await?;
 
-    sqlx::query("DELETE FROM icons WHERE user_id = ?")
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
+    // sqlx::query("DELETE FROM icons WHERE user_id = ?")
+    //     .bind(user_id)
+    //     .execute(&mut *tx)
+    //     .await?;
 
     // let rs = sqlx::query("INSERT INTO icons (user_id, image) VALUES (?, ?)")
     //     .bind(user_id)
@@ -1587,7 +1655,7 @@ async fn post_icon_handler(
     // TODO: icon IDは一意である必要がある？
     let icon_id = 1i64;
 
-    tx.commit().await?;
+    // tx.commit().await?;
 
     Ok((
         StatusCode::CREATED,
