@@ -7,3 +7,6 @@ deploy:
 
 rstatus:
 	sudo systemctl status isupipe-rust
+
+log:
+	journalctl -u isupipe-rust -f -n100
