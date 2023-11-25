@@ -1,0 +1,5 @@
+{
+  "rust-analyzer.linkedProjects": [
+    "${workspaceFolder}/home/isucon/webapp/rust/Cargo.toml"
+  ]
+}
