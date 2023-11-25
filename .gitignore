@@ -24,4 +24,3 @@
 !home/isucon/webapp/rust/Cargo*
 !home/isucon/webapp/rust/src
 !home/isucon/webapp/rust/src/**
-!home/isucon/env.sh
