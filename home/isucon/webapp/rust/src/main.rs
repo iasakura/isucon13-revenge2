@@ -1572,22 +1572,18 @@ async fn post_icon_handler(
 
     let mut tx = pool.begin().await?;
 
-    sqlx::query("DELETE FROM icons WHERE user_id = ?")
+    let name: String = sqlx::query_scalar("SELECT name FROM users WHERE id = ?")
         .bind(user_id)
-        .execute(&mut *tx)
-        .await?;
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or(Error::NotFound(
+            "not found user that has the userid in session".into(),
+        ))?;
 
-    // let rs = sqlx::query("INSERT INTO icons (user_id, image) VALUES (?, ?)")
-    //     .bind(user_id)
-    //     .bind(req.image)
-    //     .execute(&mut *tx)
-    //     .await?;
-    put_user_icon(&user_id, &req.image[..]).await?;
+    put_user_icon(&name, &req.image[..]).await?;
 
     // TODO: icon IDは一意である必要がある？
     let icon_id = 1i64;
-
-    tx.commit().await?;
 
     Ok((
         StatusCode::CREATED,
@@ -1805,8 +1801,8 @@ async fn get_user_icon(id: &i64) -> Result<Vec<u8>, Error> {
     Ok(buffer)
 }
 
-async fn put_user_icon(id: &i64, buf: &[u8]) -> Result<(), Error> {
-    let mut f = File::create(format!("/data/{}.jpeg", id)).await?;
+async fn put_user_icon(name: &str, buf: &[u8]) -> Result<(), Error> {
+    let mut f = File::create(format!("/data/{}.jpeg", name)).await?;
     f.write_all(buf).await?;
     Ok(())
 }
