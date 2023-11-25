@@ -8,6 +8,7 @@ use sqlx::ConnectOptions;
 use std::borrow::Cow;
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::Instrument;
 use uuid::Uuid;
 
 const DEFAULT_SESSION_ID_KEY: &str = "SESSIONID";
@@ -1035,12 +1036,15 @@ async fn post_livecomment_handler(
             .await?
             .ok_or(Error::NotFound("livestream not found".into()))?;
 
+    let span = tracing::info_span!("SELECT id, user_id, livestream_id, word FROM ng_words WHERE user_id = ? AND livestream_id = ?");
+
     // スパム判定
     let ngwords: Vec<NgWord> =
         sqlx::query_as("SELECT id, user_id, livestream_id, word FROM ng_words WHERE user_id = ? AND livestream_id = ?")
             .bind(livestream_model.user_id)
             .bind(livestream_model.id)
             .fetch_all(&mut *tx)
+            .instrument(span)
             .await?;
     for ngword in &ngwords {
         let query = r#"
@@ -1051,10 +1055,21 @@ async fn post_livecomment_handler(
         (SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
         ON texts.text LIKE patterns.pattern;
         "#;
+        let span = tracing::info_span!(
+            r#"
+        SELECT COUNT(*)
+        FROM
+        (SELECT ? AS text) AS texts
+        INNER JOIN
+        (SELECT CONCAT('%', ?, '%')	AS pattern) AS patterns
+        ON texts.text LIKE patterns.pattern;
+        "#
+        );
         let hit_spam: i64 = sqlx::query_scalar(query)
             .bind(&req.comment)
             .bind(&ngword.word)
             .fetch_one(&mut *tx)
+            .instrument(span)
             .await?;
         tracing::info!("[hit_spam={}] comment = {}", hit_spam, req.comment);
         if hit_spam >= 1 {
@@ -1066,6 +1081,7 @@ async fn post_livecomment_handler(
 
     let now = Utc::now().timestamp();
 
+    let span =tracing::info_span!("INSERT INTO livecomments (user_id, livestream_id, comment, tip, created_at) VALUES (?, ?, ?, ?, ?)");
     let rs = sqlx::query(
         "INSERT INTO livecomments (user_id, livestream_id, comment, tip, created_at) VALUES (?, ?, ?, ?, ?)",
     )
@@ -1075,6 +1091,7 @@ async fn post_livecomment_handler(
     .bind(req.tip)
     .bind(now)
     .execute(&mut *tx)
+    .instrument(span)
     .await?;
     let livecomment_id = rs.last_insert_id() as i64;
 
