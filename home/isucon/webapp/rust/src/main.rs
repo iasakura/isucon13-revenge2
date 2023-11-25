@@ -607,29 +607,17 @@ async fn search_livestreams_handler(
         }
         sqlx::query_as(&query).fetch_all(&mut *tx).await?
     } else {
-        // タグによる取得
-        let tag_id_list: Vec<i64> = sqlx::query_scalar("SELECT id FROM tags WHERE name = ?")
-            .bind(key_tag_name)
-            .fetch_all(&mut *tx)
-            .await?;
-
-        let mut query_builder = sqlx::query_builder::QueryBuilder::new(
-            "SELECT * FROM livestream_tags WHERE tag_id IN (",
-        );
-        let mut separated = query_builder.separated(", ");
-        for tag_id in tag_id_list {
-            separated.push_bind(tag_id);
-        }
-        separated.push_unseparated(") ORDER BY livestream_id DESC");
-        let key_tagged_livestreams: Vec<LivestreamTagModel> =
-            query_builder.build_query_as().fetch_all(&mut *tx).await?;
-
+        // // タグによる取得
         let mut livestream_models = Vec::new();
-        for key_tagged_livestream in key_tagged_livestreams {
-            let ls = sqlx::query_as("SELECT * FROM livestreams WHERE id = ?")
-                .bind(key_tagged_livestream.livestream_id)
-                .fetch_one(&mut *tx)
-                .await?;
+        for ls in sqlx::query_as(
+            r#"SELECT livestreams.* FROM livestreams
+            INNER JOIN livestream_tags ON livestreams.id = livestream_tags.livestream_id
+            INNER JOIN tags ON livestream_tags.tag_id = tags.id AND tags.name = ?"#,
+        )
+        .bind(key_tag_name)
+        .fetch_all(&mut *tx)
+        .await?
+        {
             livestream_models.push(ls);
         }
         livestream_models
