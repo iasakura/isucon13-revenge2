@@ -137,49 +137,49 @@ async fn initialize_handler() -> Result<axum::Json<InitializeResponse>, Error> {
     Ok(axum::Json(InitializeResponse { language: "rust" }))
 }
 
-fn init_tracing() {
-    use opentelemetry::global;
-    use opentelemetry_otlp::WithExportConfig as _;
+// fn init_tracing() {
+// use opentelemetry::global;
+// use opentelemetry_otlp::WithExportConfig as _;
 
-    global::set_text_map_propagator(opentelemetry_sdk::propagation::TraceContextPropagator::new());
-    // Configure otel exporter.
-    let tracer = opentelemetry_otlp::new_pipeline()
-        .tracing()
-        .with_exporter(
-            opentelemetry_otlp::new_exporter()
-                .tonic()
-                .with_endpoint("http://localhost:4317"),
-        )
-        .with_trace_config(
-            opentelemetry_sdk::trace::config()
-                .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn)
-                .with_id_generator(opentelemetry_sdk::trace::RandomIdGenerator::default())
-                .with_resource(opentelemetry_sdk::Resource::new(vec![
-                    opentelemetry::KeyValue::new("service.name", "isucon13"),
-                ])),
-        )
-        .install_batch(opentelemetry_sdk::runtime::TokioCurrentThread)
-        // .install_simple()
-        .expect("Not running in tokio runtime");
+// global::set_text_map_propagator(opentelemetry_sdk::propagation::TraceContextPropagator::new());
+// // Configure otel exporter.
+// let tracer = opentelemetry_otlp::new_pipeline()
+//     .tracing()
+//     .with_exporter(
+//         opentelemetry_otlp::new_exporter()
+//             .tonic()
+//             .with_endpoint("http://localhost:4317"),
+//     )
+//     .with_trace_config(
+//         opentelemetry_sdk::trace::config()
+//             .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn)
+//             .with_id_generator(opentelemetry_sdk::trace::RandomIdGenerator::default())
+//             .with_resource(opentelemetry_sdk::Resource::new(vec![
+//                 opentelemetry::KeyValue::new("service.name", "isucon13"),
+//             ])),
+//     )
+//     .install_batch(opentelemetry_sdk::runtime::TokioCurrentThread)
+//     // .install_simple()
+//     .expect("Not running in tokio runtime");
 
-    // Compatible layer with tracing.
-    let otel_trace_layer = tracing_opentelemetry::layer().with_tracer(tracer);
-    // let otel_metrics_layer = tracing_opentelemetry::MetricsLayer::new(build_metrics_controller());
+// // Compatible layer with tracing.
+// let otel_trace_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+// // let otel_metrics_layer = tracing_opentelemetry::MetricsLayer::new(build_metrics_controller());
 
-    use tracing_subscriber::layer::SubscriberExt;
-    use tracing_subscriber::util::SubscriberInitExt;
+// use tracing_subscriber::layer::SubscriberExt;
+// use tracing_subscriber::util::SubscriberInitExt;
 
-    tracing_subscriber::Registry::default()
-        .with(tracing_subscriber::fmt::Layer::new().with_ansi(true).json())
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "debug".into()),
-        )
-        .with(otel_trace_layer)
-        // .with(otel_metrics_layer)
-        .with(tracing_subscriber::filter::LevelFilter::INFO)
-        .init();
-}
+// tracing_subscriber::Registry::default()
+//     .with(tracing_subscriber::fmt::Layer::new().with_ansi(true).json())
+//     .with(
+//         tracing_subscriber::EnvFilter::try_from_default_env()
+//             .unwrap_or_else(|_| "debug".into()),
+//     )
+//     .with(otel_trace_layer)
+//     // .with(otel_metrics_layer)
+//     .with(tracing_subscriber::filter::LevelFilter::INFO)
+//     .init();
+// }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -187,7 +187,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::env::set_var("RUST_LOG", "info,tower_http=debug,axum::rejection=trace");
     }
     // tracing_subscriber::fmt::init();
-    init_tracing();
+    // init_tracing();
 
     let pool = sqlx::mysql::MySqlPoolOptions::new()
         .connect_with(build_mysql_options())
