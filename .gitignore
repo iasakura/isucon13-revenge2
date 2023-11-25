@@ -9,6 +9,8 @@
 !etc/mysql/my.cnf
 !etc/mysql/conf.d
 !etc/mysql/conf.d/my.cnf
+!etc/mysql/mysql.conf.d
+!etc/mysql/mysql.conf.d/mysqld.cnf
 !etc/nginx
 !etc/nginx/nginx.conf
 !etc/nginx/sites-enabled/
